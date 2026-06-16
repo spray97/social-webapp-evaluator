@@ -230,6 +230,7 @@ function getNextUnscored(fromRowIndex) {
 }
 
 function generateSetech(rowIndex) {
+  var SETECH_MODEL = 'anthropic/claude-sonnet-4-6';
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     var row   = sheet.getRange(parseInt(rowIndex) + 1, 1, 1, 15).getValues()[0];
@@ -284,7 +285,6 @@ function generateSetech(rowIndex) {
       '활용 도구: ' + tools + '\n\n' +
       '교과세특을 작성하세요. 완성 후 반드시 글자 수(공백 포함)를 확인하여 350~400자 범위에 맞춰 주세요.';
 
-    var SETECH_MODEL = 'anthropic/claude-sonnet-4-6';
     var setech = callOpenRouter(setechPrompt, SETECH_MODEL);
 
     // P열(16번째)에 저장
