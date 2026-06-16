@@ -25,8 +25,9 @@
       align-items: center;
       flex-shrink: 0;
     }
-    .student-info h2 { font-size: 22px; }
-    .student-info span { font-size: 13px; opacity: 0.75; margin-left: 12px; }
+    .student-info { display: flex; align-items: center; gap: 14px; }
+    .student-info h2 { font-size: 22px; margin: 0; }
+    .student-info span { font-size: 22px; opacity: 0.9; margin-left: 0; }
 
     .controls { display: flex; align-items: center; gap: 10px; }
     .btn-sm {
@@ -260,8 +261,7 @@
       <h2 id="disp_name">학생 성명</h2>
       <span id="disp_id">학번: ----- | 로딩 중...</span>
       <span id="scored_badge" style="display:none; background:#28a745; color:white;
-        font-size:12px; font-weight:bold; padding:3px 10px; border-radius:12px;
-        margin-left:8px; vertical-align:middle;">✅ 채점완료</span>
+        font-size:22px; font-weight:bold; padding:4px 16px; border-radius:14px;">✅ 채점완료</span>
     </div>
     <div class="controls">
       <button class="btn-sm btn-fullscreen" onclick="toggleFullScreen()">🖥️ 전체화면</button>
