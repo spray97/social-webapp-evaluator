@@ -104,10 +104,12 @@ function readDriveFile(fileId) {
 
 // ── OpenRouter AI 분석 ────────────────────────────────
 
-function callOpenRouter(prompt) {
+function callOpenRouter(prompt, model) {
   var apiKey = PropertiesService.getScriptProperties()
                  .getProperty('OPENROUTER_API_KEY');
   if (!apiKey) throw new Error('OPENROUTER_API_KEY가 Script Properties에 설정되지 않았습니다.');
+
+  var usedModel = model || 'google/gemini-2.5-flash-lite';
 
   var response = UrlFetchApp.fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'post',
@@ -118,7 +120,7 @@ function callOpenRouter(prompt) {
       'X-Title':        'Social Webapp Evaluator'
     },
     payload: JSON.stringify({
-      model:      'google/gemini-2.5-flash-lite',
+      model:      usedModel,
       messages:   [{ role: 'user', content: prompt }],
       max_tokens: 800
     }),
@@ -282,7 +284,8 @@ function generateSetech(rowIndex) {
       '활용 도구: ' + tools + '\n\n' +
       '교과세특을 작성하세요. 완성 후 반드시 글자 수(공백 포함)를 확인하여 350~400자 범위에 맞춰 주세요.';
 
-    var setech = callOpenRouter(setechPrompt);
+    var SETECH_MODEL = 'anthropic/claude-sonnet-4-6';
+    var setech = callOpenRouter(setechPrompt, SETECH_MODEL);
 
     // P열(16번째)에 저장
     sheet.getRange(parseInt(rowIndex) + 1, 16).setValue(setech);
