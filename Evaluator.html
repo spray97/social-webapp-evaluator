@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --body-font-size: 17px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── 헤더 ── */
+    .header {
+      background: #1a3a5c;
+      color: white;
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .student-info h2 { font-size: 22px; }
+    .student-info span { font-size: 13px; opacity: 0.75; margin-left: 12px; }
+
+    .controls { display: flex; align-items: center; gap: 10px; }
+    .btn-sm {
+      padding: 6px 12px; font-size: 13px; font-weight: bold;
+      border: none; border-radius: 4px; cursor: pointer;
+      color: white; background: #3a5a7c;
+    }
+    .btn-sm:hover { background: #4a6a8c; }
+    .btn-fullscreen { background: #c0392b; }
+    .btn-fullscreen:hover { background: #a93226; }
+
+    .nav-btns {
+      display: flex; align-items: center; gap: 7px;
+      border-left: 1px solid #3a5a7c; padding-left: 12px;
+    }
+    .btn-nav {
+      padding: 7px 14px; font-size: 13px; font-weight: bold;
+      cursor: pointer; border-radius: 4px; border: 1px solid #ccc;
+      background: white; color: #333;
+    }
+    .btn-nav:hover { background: #e0e4ea; }
+    .btn-nav-next { background: #0056b3; color: white; border: none; }
+    .btn-nav-next:hover { background: #004494; }
+    .jump-input {
+      width: 50px; padding: 6px; text-align: center;
+      font-size: 13px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    #prog_text { font-size: 14px; font-weight: bold; min-width: 55px; text-align: center; }
+
+    /* ── 메인 2열 ── */
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .panel {
+      background: white;
+      border-radius: 8px;
+      padding: 20px 24px;
+      overflow-y: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 앱 정보 카드 */
+    .app-card {
+      background: #eef4ff;
+      border: 1px solid #c5d8f5;
+      border-radius: 8px;
+      padding: 14px 18px;
+    }
+    .app-card .app-name {
+      font-size: 17px; font-weight: bold; color: #1a3a5c;
+      margin-bottom: 10px; line-height: 1.5;
+    }
+    .app-card .link-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-link {
+      padding: 7px 16px; font-size: 13px; font-weight: bold;
+      border-radius: 5px; cursor: pointer; border: none;
+      color: white; text-decoration: none; display: inline-block;
+    }
+    .btn-app-link  { background: #0056b3; }
+    .btn-code-link { background: #5a6a7c; }
+    .btn-link:hover { opacity: 0.85; }
+    .btn-link.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* 섹션 */
+    .q-label {
+      font-size: 14px; font-weight: bold; color: #0056b3;
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 2px solid #eef2ff;
+    }
+    .q-text {
+      font-size: var(--body-font-size);
+      line-height: 1.85;
+      color: #1a1a1a;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+
+    /* ── AI 분석 영역 ── */
+    .ai-section {
+      border-top: 2px solid #e0e4ea;
+      background: #fafbfc;
+      flex-shrink: 0;
+    }
+    .ai-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 20px;
+    }
+    .ai-row + .ai-row {
+      border-top: 1px solid #e8eaed;
+      background: #f3f0ff;
+    }
+    .btn-analyze {
+      padding: 8px 20px; font-size: 14px; font-weight: bold;
+      border: none; border-radius: 6px; cursor: pointer;
+      background: #6f42c1; color: white; white-space: nowrap;
+      flex-shrink: 0; align-self: center;
+    }
+    .btn-analyze:hover { background: #5a32a3; }
+    .btn-analyze:disabled { background: #aaa; cursor: default; }
+
+    .ai-label {
+      font-size: 12px; font-weight: bold; color: #666;
+      white-space: nowrap; flex-shrink: 0;
+      align-self: flex-start; padding-top: 3px; min-width: 60px;
+    }
+
+    .ai-badge {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: bold;
+      white-space: nowrap; display: none; flex-shrink: 0;
+    }
+    .ai-badge.normal { background: #d4edda; color: #155724; display: inline-block; }
+    .ai-badge.error  { background: #f8d7da; color: #721c24; display: inline-block; }
+
+    .relevance-badge {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: bold;
+      white-space: nowrap; flex-shrink: 0; display: none;
+    }
+    .relevance-badge.high   { background: #d4edda; color: #155724; display: inline-block; }
+    .relevance-badge.medium { background: #fff3cd; color: #856404; display: inline-block; }
+    .relevance-badge.low    { background: #f8d7da; color: #721c24; display: inline-block; }
+
+    .ai-analysis-text {
+      font-size: 13px; color: #444;
+      line-height: 1.6; flex: 1;
+    }
+    .relevance-text {
+      font-size: 13px; color: #333;
+      line-height: 1.6; flex: 1;
+    }
+    .sheet2-preview {
+      font-size: 12px; color: #666; background: white;
+      border: 1px solid #ddd; border-radius: 4px;
+      padding: 6px 10px; max-height: 48px; overflow: hidden;
+      flex: 1; white-space: pre-wrap; line-height: 1.5;
+    }
+
+    /* ── 푸터 ── */
+    .footer-bar {
+      background: white;
+      border-top: 2px solid #dee2e6;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    .comment-wrap { flex: 1; }
+    .comment-wrap textarea {
+      width: 100%; height: 56px; padding: 10px 14px;
+      font-size: 15px; border: 1px solid #ced4da;
+      border-radius: 5px; resize: none;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .score-area { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .score-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-score {
+      width: 52px; height: 42px; font-size: 15px; font-weight: bold;
+      border: 2px solid #1a3a5c; background: white; color: #1a3a5c;
+      border-radius: 6px; cursor: pointer; transition: 0.1s;
+    }
+    .btn-score:hover { background: #eef4ff; }
+    .btn-score.active { background: #1a3a5c; color: white; transform: scale(1.08); }
+    .btn-score.unsubmit { border-color: #c0392b; color: #c0392b; width: 72px; font-size: 13px; }
+    .btn-score.unsubmit.active { background: #c0392b; color: white; }
+
+    .btn-save {
+      padding: 10px 22px; background: #28a745; color: white;
+      border: none; border-radius: 6px; font-size: 16px;
+      font-weight: bold; cursor: pointer; white-space: nowrap;
+    }
+    .btn-save:hover { background: #218838; }
+
+    /* ── 교과세특 섹션 ── */
+    .setech-section {
+      border-top: 2px solid #e0e4ea;
+      background: #fffdf0;
+      flex-shrink: 0;
+      padding: 10px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-height: 58px;
+    }
+    .setech-btn-wrap {
+      display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+    }
+    .btn-setech {
+      padding: 8px 14px; font-size: 13px; font-weight: bold;
+      border: none; border-radius: 6px; cursor: pointer;
+      background: #8B6914; color: white; white-space: nowrap;
+    }
+    .btn-setech:hover { background: #6f5310; }
+    .btn-setech:disabled { background: #aaa; cursor: default; }
+    .setech-charcount {
+      font-size: 11px; text-align: center; font-weight: bold;
+    }
+    .setech-charcount.ok   { color: #155724; }
+    .setech-charcount.over { color: #721c24; }
+    .setech-label {
+      font-size: 12px; font-weight: bold; color: #666;
+      flex-shrink: 0; padding-top: 3px; min-width: 72px;
+      line-height: 1.6;
+    }
+    .setech-text {
+      font-size: 13px; color: #333; flex: 1;
+      line-height: 1.7; max-height: 72px; overflow-y: auto;
+      white-space: pre-wrap; word-break: keep-all;
+    }
+    .setech-text.placeholder { color: #aaa; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="student-info">
+      <h2 id="disp_name">학생 성명</h2>
+      <span id="disp_id">학번: ----- | 로딩 중...</span>
+      <span id="scored_badge" style="display:none; background:#28a745; color:white;
+        font-size:12px; font-weight:bold; padding:3px 10px; border-radius:12px;
+        margin-left:8px; vertical-align:middle;">✅ 채점완료</span>
+    </div>
+    <div class="controls">
+      <button class="btn-sm btn-fullscreen" onclick="toggleFullScreen()">🖥️ 전체화면</button>
+      <span style="font-size:12px; opacity:.7">글자:</span>
+      <button class="btn-sm" onclick="adjustFont(2)">➕</button>
+      <button class="btn-sm" onclick="adjustFont(-2)">➖</button>
+      <div class="nav-btns">
+        <button class="btn-nav" onclick="move(-1)">◀ 이전</button>
+        <input type="number" id="jump_idx" class="jump-input" placeholder="번호"
+               onkeydown="if(event.key==='Enter') jump()">
+        <span id="prog_text">1 / 0</span>
+        <button class="btn-nav btn-nav-next" onclick="move(1)">다음 ▶</button>
+        <button class="btn-nav" id="btn_unscored"
+          style="background:#e67e22; color:white; border:none;"
+          onclick="moveToUnscored()">⏭ 미채점</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 2열 -->
+  <main class="main-container">
+
+    <!-- 왼쪽: 앱 정보 + 문제점 -->
+    <div class="panel">
+      <div class="app-card">
+        <div class="app-name" id="disp_appName">앱 이름</div>
+        <div class="link-btns">
+          <a id="link_app" class="btn-link btn-app-link" href="#" target="_blank">🔗 앱 실행하기</a>
+          <a id="link_code" class="btn-link btn-code-link" href="#" target="_blank">📄 코드 보기</a>
+        </div>
+      </div>
+      <div>
+        <div class="q-label">6. 문제점 원인 및 대책</div>
+        <div class="q-text" id="disp_problem">...</div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 핵심 기능 + 활용 프로그램 -->
+    <div class="panel">
+      <div>
+        <div class="q-label">7. 핵심 기능 및 이유</div>
+        <div class="q-text" id="disp_features">...</div>
+      </div>
+      <div>
+        <div class="q-label">8. 활용 프로그램</div>
+        <div class="q-text" id="disp_tools">...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- AI 분석 영역 -->
+  <div class="ai-section">
+    <!-- 코드 분석 행 -->
+    <div class="ai-row">
+      <button class="btn-analyze" id="btn_analyze" onclick="runAnalysis()">🤖 AI 분석 실행</button>
+      <span class="ai-label">코드 검토</span>
+      <span class="ai-badge" id="ai_badge"></span>
+      <span class="ai-analysis-text" id="ai_text">분석 버튼을 클릭하면 코드 유효성, 구현 일치 여부, 3차 연관성을 자동 분석합니다.</span>
+    </div>
+    <!-- 3차 연관성 행 (분석 후 표시) -->
+    <div class="ai-row" id="relevance_row" style="display:none">
+      <div style="min-width:130px; flex-shrink:0;">
+        <div class="ai-label" style="margin-bottom:4px;">📋 3차 수행평가 주제</div>
+        <div class="sheet2-preview" id="sheet2_preview"></div>
+      </div>
+      <span class="ai-label">3차 연관성</span>
+      <span class="relevance-badge" id="relevance_badge"></span>
+      <span class="relevance-text" id="relevance_text"></span>
+    </div>
+  </div>
+
+  <!-- 교과세특 섹션 -->
+  <div class="setech-section">
+    <div class="setech-btn-wrap">
+      <button class="btn-setech" id="btn_setech" onclick="runGenerateSetech()">✏️ 교과세특 작성</button>
+      <span class="setech-charcount" id="setech_charcount"></span>
+    </div>
+    <span class="setech-label">교과세특<br>(350~400자)</span>
+    <span class="setech-text placeholder" id="setech_text">교과세특 작성 버튼을 클릭하면 3차·4차 수행평가를 바탕으로 자동 생성됩니다.</span>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="footer-bar">
+    <div class="comment-wrap">
+      <textarea id="comment_input" placeholder="교사 의견을 입력하세요 (N열 저장)"></textarea>
+    </div>
+    <div class="score-area">
+      <div class="score-btns">
+        <button class="btn-score" onclick="setScore(30)">30</button>
+        <button class="btn-score" onclick="setScore(29)">29</button>
+        <button class="btn-score" onclick="setScore(28)">28</button>
+        <button class="btn-score" onclick="setScore(27)">27</button>
+        <button class="btn-score" onclick="setScore(26)">26</button>
+        <button class="btn-score" onclick="setScore(25)">25</button>
+        <button class="btn-score" onclick="setScore(24)">24</button>
+        <button class="btn-score" onclick="setScore(23)">23</button>
+        <button class="btn-score" onclick="setScore(22)">22</button>
+        <button class="btn-score unsubmit" onclick="setScore(12)">미제출</button>
+      </div>
+      <button class="btn-save" id="btn_save" onclick="save()">💾 저장 후 다음 학생</button>
+    </div>
+  </footer>
+
+  <script>
+    let currentIdx    = 1;
+    let selectedScore = null;
+    let aiResult      = { codeStatus: '', codeAnalysis: '', sheet2Content: '', relevanceAnalysis: '' };
+
+    // ── 유틸 ──────────────────────────────────────────
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+          .catch(e => alert('전체화면 실행 불가: ' + e.message));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function adjustFont(delta) {
+      const root = document.documentElement;
+      const cur  = parseFloat(
+        getComputedStyle(root).getPropertyValue('--body-font-size')
+      ) || 17;
+      root.style.setProperty('--body-font-size', (cur + delta) + 'px');
+    }
+
+    // ── 학생 로드 ─────────────────────────────────────
+
+    function load(idx) {
+      currentIdx    = idx;
+      selectedScore = null;
+      aiResult      = { codeStatus: '', codeAnalysis: '', sheet2Content: '', relevanceAnalysis: '' };
+
+      document.querySelectorAll('.btn-score').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn_save').innerText    = '데이터 불러오는 중...';
+      document.getElementById('btn_analyze').disabled  = true;
+      document.getElementById('btn_analyze').innerText = '⏳ 로딩 중...';
+      document.getElementById('ai_badge').className    = 'ai-badge';
+      document.getElementById('ai_text').innerText     =
+        '분석 버튼을 클릭하면 코드 유효성, 구현 일치 여부, 3차 연관성을 자동 분석합니다.';
+      document.getElementById('relevance_row').style.display = 'none';
+      document.getElementById('btn_setech').disabled   = true;
+      document.getElementById('btn_setech').innerText  = '⏳ 로딩 중...';
+      document.getElementById('setech_text').innerText = '교과세특 작성 버튼을 클릭하면 3차·4차 수행평가를 바탕으로 자동 생성됩니다.';
+      document.getElementById('setech_text').className = 'setech-text placeholder';
+      document.getElementById('setech_charcount').innerText = '';
+      document.getElementById('setech_charcount').className = 'setech-charcount';
+
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) {
+            alert('마지막 학생입니다.');
+            document.getElementById('btn_save').innerText    = '💾 저장 후 다음 학생';
+            document.getElementById('btn_analyze').disabled  = false;
+            document.getElementById('btn_analyze').innerText = '🤖 AI 코드 분석';
+            return;
+          }
+
+          // 기본 정보
+          document.getElementById('disp_name').innerText    = data.name;
+          document.getElementById('disp_id').innerText      =
+            '학번: ' + data.studentId + ' | 순번: ' + data.rowIndex;
+          document.getElementById('prog_text').innerText    =
+            data.rowIndex + ' / ' + data.totalStudents;
+          document.getElementById('disp_appName').innerText = data.appName;
+          document.getElementById('scored_badge').style.display =
+            data.score ? 'inline-block' : 'none';
+
+          // 링크 버튼
+          const linkApp  = document.getElementById('link_app');
+          const linkCode = document.getElementById('link_code');
+          if (data.appLink) {
+            linkApp.href = data.appLink;
+            linkApp.classList.remove('disabled');
+          } else {
+            linkApp.href = '#';
+            linkApp.classList.add('disabled');
+          }
+          if (data.codeLink) {
+            linkCode.href = data.codeLink;
+            linkCode.classList.remove('disabled');
+          } else {
+            linkCode.href = '#';
+            linkCode.classList.add('disabled');
+          }
+
+          // 학생 답변
+          document.getElementById('disp_problem').innerText  = data.problem;
+          document.getElementById('disp_features').innerText = data.features;
+          document.getElementById('disp_tools').innerText    = data.tools;
+          document.getElementById('comment_input').value     = data.comment || '';
+
+          // 기존 AI 분석 결과 복원
+          if (data.codeStatus) {
+            showAiResult(data.codeStatus, data.codeAnalysis);
+            aiResult = {
+              codeStatus:        data.codeStatus,
+              codeAnalysis:      data.codeAnalysis,
+              sheet2Content:     '',
+              relevanceAnalysis: data.relevanceAnalysis || ''
+            };
+            if (data.relevanceAnalysis) {
+              showRelevance('', data.relevanceAnalysis);
+            }
+          }
+
+          // 기존 점수 복원
+          if (data.score) setScore(parseInt(data.score));
+
+          // 기존 세특 복원
+          const setechEl    = document.getElementById('setech_text');
+          const setechCount = document.getElementById('setech_charcount');
+          const setechBtn   = document.getElementById('btn_setech');
+          if (data.setech) {
+            setechEl.innerText  = data.setech;
+            setechEl.className  = 'setech-text';
+            const len = data.setech.length;
+            setechCount.innerText = len + '자';
+            setechCount.className = 'setech-charcount ' + (len >= 350 && len <= 400 ? 'ok' : 'over');
+            setechBtn.innerText = '🔄 재생성';
+          } else {
+            setechEl.innerText  = '교과세특 작성 버튼을 클릭하면 3차·4차 수행평가를 바탕으로 자동 생성됩니다.';
+            setechEl.className  = 'setech-text placeholder';
+            setechCount.innerText = '';
+            setechBtn.innerText = '✏️ 교과세특 작성';
+          }
+          setechBtn.disabled = false;
+
+          document.getElementById('btn_save').innerText    = '💾 저장 후 다음 학생';
+          document.getElementById('btn_analyze').disabled  = false;
+          document.getElementById('btn_analyze').innerText = '🤖 AI 코드 분석';
+        })
+        .getStudentData(idx);
+    }
+
+    // ── AI 분석 ───────────────────────────────────────
+
+    function runAnalysis() {
+      const btn = document.getElementById('btn_analyze');
+      btn.disabled  = true;
+      btn.innerText = '⏳ AI 분석 중...';
+      document.getElementById('ai_badge').className          = 'ai-badge';
+      document.getElementById('ai_text').innerText           = 'Drive 파일을 읽고 AI가 분석 중입니다. 잠시 기다려 주세요...';
+      document.getElementById('relevance_row').style.display = 'none';
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          aiResult = result;
+          showAiResult(result.codeStatus, result.codeAnalysis);
+          showRelevance(result.sheet2Content, result.relevanceAnalysis);
+          btn.disabled  = false;
+          btn.innerText = '🔄 재분석';
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('ai_text').innerText = '오류: ' + err.message;
+          btn.disabled  = false;
+          btn.innerText = '🤖 AI 분석 실행';
+        })
+        .analyzeCode(currentIdx);
+    }
+
+    function showAiResult(status, analysis) {
+      const badge = document.getElementById('ai_badge');
+      badge.innerText = status;
+      badge.className = 'ai-badge ' + (status === '정상코드' ? 'normal' : 'error');
+      document.getElementById('ai_text').innerText = analysis || '';
+    }
+
+    function showRelevance(sheet2Content, relevanceText) {
+      if (!relevanceText) return;
+
+      document.getElementById('sheet2_preview').innerText = sheet2Content
+        ? sheet2Content.substring(0, 80) + (sheet2Content.length > 80 ? '...' : '')
+        : '(3차 자료 없음)';
+
+      // [높음]/[보통]/[낮음] 첫 줄 파싱
+      const firstLine = relevanceText.split('\n')[0];
+      const bodyText  = relevanceText.split('\n').slice(1).join('\n').trim();
+      document.getElementById('relevance_text').innerText = bodyText || relevanceText;
+
+      const badge = document.getElementById('relevance_badge');
+      let level = 'medium';
+      if (firstLine.includes('[높음]')) level = 'high';
+      else if (firstLine.includes('[낮음]')) level = 'low';
+
+      const labelMap = { high: '연관성 높음', medium: '연관성 보통', low: '연관성 낮음' };
+      badge.innerText = labelMap[level];
+      badge.className = 'relevance-badge ' + level;
+
+      document.getElementById('relevance_row').style.display = 'flex';
+    }
+
+    // ── 점수·저장 ─────────────────────────────────────
+
+    function setScore(s) {
+      selectedScore = s;
+      document.querySelectorAll('.btn-score').forEach(function(b) {
+        const isUnsubmit = b.classList.contains('unsubmit');
+        const val        = isUnsubmit ? 12 : parseInt(b.innerText);
+        b.classList.toggle('active', val === s);
+      });
+    }
+
+    function save() {
+      if (!selectedScore) { alert('점수를 먼저 선택해 주세요.'); return; }
+      document.getElementById('btn_save').innerText = '저장 중...';
+      google.script.run
+        .withSuccessHandler(() => load(currentIdx + 1))
+        .saveResult(
+          currentIdx,
+          aiResult.codeStatus        || '',
+          aiResult.codeAnalysis      || '',
+          aiResult.relevanceAnalysis || '',
+          document.getElementById('comment_input').value,
+          selectedScore
+        );
+    }
+
+    // ── 네비게이션 ────────────────────────────────────
+
+    function move(dir) { load(currentIdx + dir); }
+
+    function jump() {
+      const val = parseInt(document.getElementById('jump_idx').value);
+      if (val > 0) load(val);
+    }
+
+    function moveToUnscored() {
+      const btn     = document.getElementById('btn_unscored');
+      btn.disabled  = true;
+      btn.innerText = '⏳ 검색 중...';
+      google.script.run
+        .withSuccessHandler(function(nextIdx) {
+          btn.disabled  = false;
+          btn.innerText = '⏭ 미채점';
+          if (nextIdx) {
+            load(nextIdx);
+          } else {
+            alert('🎉 현재 위치 이후 미채점 학생이 없습니다. 처음으로 이동합니다.');
+            load(1);
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled  = false;
+          btn.innerText = '⏭ 미채점';
+          alert('오류: ' + err.message);
+        })
+        .getNextUnscored(currentIdx);
+    }
+
+    function runGenerateSetech() {
+      const btn     = document.getElementById('btn_setech');
+      const textEl  = document.getElementById('setech_text');
+      const countEl = document.getElementById('setech_charcount');
+      btn.disabled   = true;
+      btn.innerText  = '⏳ 생성 중...';
+      textEl.innerText = '3차·4차 수행평가 내용을 분석하고 교과세특을 작성 중입니다...';
+      textEl.className = 'setech-text placeholder';
+      countEl.innerText = '';
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          const text = result.setech || '';
+          textEl.innerText  = text;
+          textEl.className  = 'setech-text';
+          const len = text.length;
+          countEl.innerText = len + '자';
+          countEl.className = 'setech-charcount ' + (len >= 350 && len <= 400 ? 'ok' : 'over');
+          btn.disabled  = false;
+          btn.innerText = '🔄 재생성';
+        })
+        .withFailureHandler(function(err) {
+          textEl.innerText  = '오류: ' + err.message;
+          textEl.className  = 'setech-text';
+          btn.disabled  = false;
+          btn.innerText = '✏️ 교과세특 작성';
+        })
+        .generateSetech(currentIdx);
+    }
+
+    window.onload = () => load(1);
+  </script>
+
+</body>
+</html>
