@@ -120,8 +120,11 @@ function callOpenRouter(prompt, model, maxTokens) {
       'X-Title':        'Social Webapp Evaluator'
     },
     payload: JSON.stringify({
-      model:      usedModel,
-      messages:   [{ role: 'user', content: prompt }],
+      model:    usedModel,
+      messages: [
+        { role: 'system', content: '당신은 한국 고등학교 수행평가 채점을 돕는 교육 도우미입니다. 모든 응답은 반드시 한국어로만 작성하세요. 영어 사용 금지.' },
+        { role: 'user',   content: prompt }
+      ],
       max_tokens: maxTokens || 800
     }),
     muteHttpExceptions: true
@@ -166,6 +169,7 @@ function analyzeCode(rowIndex) {
     }
 
     var combinedPrompt =
+      '※ 모든 출력을 반드시 한국어로만 작성하세요. 영어 절대 금지.\n\n' +
       '다음은 고등학생이 "사회문제 해결 웹앱"으로 제출한 코드입니다.\n' +
       '코드 텍스트만으로 분석하며, 실제 실행 결과는 확인할 수 없음을 전제로 합니다.\n\n' +
       '출력 형식:\n' +
