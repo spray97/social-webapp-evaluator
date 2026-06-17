@@ -109,7 +109,7 @@ function callOpenRouter(prompt, model) {
                  .getProperty('OPENROUTER_API_KEY');
   if (!apiKey) throw new Error('OPENROUTER_API_KEY가 Script Properties에 설정되지 않았습니다.');
 
-  var usedModel = model || 'google/gemini-2.5-flash-lite';
+  var usedModel = model || 'google/gemini-3.5-flash';
 
   var response = UrlFetchApp.fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'post',
