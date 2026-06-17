@@ -193,7 +193,7 @@ function analyzeCode(rowIndex) {
     var combinedRaw = callOpenRouter(combinedPrompt);
 
     function extractSection(raw, tag) {
-      var re = new RegExp('\\[' + tag + '\\]\\s*([\\s\\S]*?)(?=\\[|$)');
+      var re = new RegExp('\\[' + tag + '\\]\\s*([\\s\\S]*?)(?=\\n\\[|$)');
       var m  = raw.match(re);
       return m ? m[1].trim() : '';
     }
