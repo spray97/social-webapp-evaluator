@@ -569,8 +569,12 @@
     function showRelevance(sheet2Content, relevanceText) {
       if (!relevanceText) return;
 
-      document.getElementById('sheet2_preview').innerText = sheet2Content
-        ? sheet2Content.substring(0, 80) + (sheet2Content.length > 80 ? '...' : '')
+      // "1) 관심 사회문제:" 같은 헤더 줄 제거 후 실제 내용만 미리보기
+      const cleanPreview = sheet2Content
+        ? sheet2Content.replace(/^\d+\)[^\n]*:\s*/m, '').trim()
+        : '';
+      document.getElementById('sheet2_preview').innerText = cleanPreview
+        ? cleanPreview.substring(0, 80) + (cleanPreview.length > 80 ? '...' : '')
         : '(3차 자료 없음)';
 
       // 전체 텍스트에서 등급 태그를 검색 (위치 무관)
