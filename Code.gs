@@ -104,7 +104,7 @@ function readDriveFile(fileId) {
 
 // ── OpenRouter AI 분석 ────────────────────────────────
 
-function callOpenRouter(prompt, model) {
+function callOpenRouter(prompt, model, maxTokens) {
   var apiKey = PropertiesService.getScriptProperties()
                  .getProperty('OPENROUTER_API_KEY');
   if (!apiKey) throw new Error('OPENROUTER_API_KEY가 Script Properties에 설정되지 않았습니다.');
@@ -122,7 +122,7 @@ function callOpenRouter(prompt, model) {
     payload: JSON.stringify({
       model:      usedModel,
       messages:   [{ role: 'user', content: prompt }],
-      max_tokens: 800
+      max_tokens: maxTokens || 800
     }),
     muteHttpExceptions: true
   });
@@ -180,17 +180,17 @@ function analyzeCode(rowIndex) {
       '- 중급: 입력·저장·조회 로직, 조건 분기, 간단한 계산 포함\n' +
       '- 고급: 외부 API 연동, 데이터 연산·알고리즘, 다중 기능 연동\n\n' +
       '[구현기능]\n' +
-      '코드에서 실제로 확인된 기능만 나열 (200자 이내, 추정 금지)\n\n' +
+      '코드에서 실제로 확인된 기능을 빠짐없이 나열 (추정 금지, 개수 제한 없음)\n\n' +
       '[미구현의심]\n' +
-      '학생이 제출 설명에 기재했으나 코드에서 확인되지 않거나 placeholder 수준인 기능.\n' +
+      '학생이 제출 설명에 기재했으나 코드에서 확인되지 않거나 placeholder 수준인 기능을 빠짐없이 나열.\n' +
       '없으면 "없음"이라고만 작성.\n\n' +
       '[채점주의]\n' +
-      '교사가 앱을 직접 실행하여 확인해야 할 핵심 포인트 (100자 이내)\n\n' +
+      '교사가 앱을 직접 실행하여 확인해야 할 핵심 포인트\n\n' +
       '[학생이 주목한 문제점 및 대책]\n' + problem + '\n\n' +
       '[학생이 제시한 핵심 기능]\n' + features + '\n\n' +
       '[제출된 코드]\n' + codeText;
 
-    var combinedRaw = callOpenRouter(combinedPrompt);
+    var combinedRaw = callOpenRouter(combinedPrompt, null, 1500);
 
     function extractSection(raw, tag) {
       var re = new RegExp('\\[' + tag + '\\]\\s*([\\s\\S]*?)(?=\\n\\[|$)');
@@ -233,7 +233,7 @@ function analyzeCode(rowIndex) {
         '앱 이름: ' + appName + '\n' +
         '문제점 원인 및 대책: ' + problem + '\n' +
         '핵심 기능: ' + features;
-      relevanceAnalysis = callOpenRouter(relevancePrompt);
+      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 1000);
     } else {
       relevanceAnalysis = '시트2에서 학번(' + studentId + ')에 해당하는 3차 수행평가 자료를 찾을 수 없습니다.';
     }
