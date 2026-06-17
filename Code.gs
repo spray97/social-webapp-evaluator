@@ -183,17 +183,19 @@ function analyzeCode(rowIndex) {
     }
 
     var combinedPrompt =
-      '다음 학생이 제출한 코드를 분석하세요.\n\n' +
-      '응답 형식을 반드시 지켜주세요:\n' +
-      '첫 번째 줄: "정상코드" 또는 "오류코드" 중 하나만 작성\n' +
-      '두 번째 줄: 마크다운(번호 목록·볼드·기호 등) 없이 한 문단으로 작성. ' +
-      '코드에서 실제로 확인된 구현 기능을 먼저 나열하고, 쉼표로 구분하여, ' +
-      '구현되지 않은 기능은 마지막에 "반면 ~는 코드에서 확인되지 않음" 형태로 마무리.\n\n' +
+      '아래 학생 코드를 분석하고, 지침·생각 과정 없이 결과 두 줄만 출력하세요.\n\n' +
+      '─── 출력 형식 (이 두 줄 외 아무것도 출력하지 마세요) ───\n' +
+      '정상코드\n' +
+      '구현된 기능A, 구현된 기능B, ... 반면 미구현기능은 코드에서 확인되지 않음.\n' +
+      '──────────────────────────────────────────────────────\n\n' +
+      '규칙: 첫 줄은 "정상코드" 또는 "오류코드" 중 하나만. ' +
+      '둘째 줄은 마크다운(*, -, ** 등) 없이 순수 텍스트 한 문단. ' +
+      '지침 문장을 출력에 포함하지 마세요.\n\n' +
       '[학생이 주목한 문제점 및 대책]\n' + problem + '\n\n' +
       '[학생이 제시한 핵심 기능]\n' + features + '\n\n' +
       '[제출된 코드]\n' + codeText;
 
-    var combinedRaw = callOpenRouter(combinedPrompt, null, 1000);
+    var combinedRaw = callOpenRouter(combinedPrompt, null, 2000);
     var lines       = combinedRaw.split('\n');
     var codeStatus  = '오류코드';
     var analysisStartIndex = 0;
@@ -205,7 +207,16 @@ function analyzeCode(rowIndex) {
         break;
       }
     }
-    var codeAnalysis = lines.slice(analysisStartIndex).join('\n').trim();
+    // 모델이 생각 과정을 출력한 줄(*, -, Wait, Note 등으로 시작) 제거
+    var codeAnalysis = lines.slice(analysisStartIndex)
+      .filter(function(line) {
+        var t = line.trim();
+        if (!t) return false;
+        if (/^[*\-]/.test(t)) return false;
+        if (/^(Wait|Note|The instruction|지침|형식|규칙|출력)/i.test(t)) return false;
+        return true;
+      })
+      .join('\n').trim();
 
     // 3차 수행평가 연관성 분석
     var studentId     = row[2];
@@ -228,7 +239,7 @@ function analyzeCode(rowIndex) {
         '앱 이름: ' + appName + '\n' +
         '문제점 원인 및 대책: ' + problem + '\n' +
         '핵심 기능: ' + features;
-      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 800);
+      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 1500);
     } else {
       relevanceAnalysis = '시트2에서 학번(' + studentId + ')에 해당하는 3차 수행평가 자료를 찾을 수 없습니다.';
     }
