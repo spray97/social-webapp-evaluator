@@ -289,8 +289,8 @@
       <div class="app-card">
         <div class="app-name" id="disp_appName">앱 이름</div>
         <div class="link-btns">
-          <a id="link_app" class="btn-link btn-app-link" href="#" target="_blank">🔗 앱 실행하기</a>
-          <a id="link_code" class="btn-link btn-code-link" href="#" target="_blank">📄 코드 보기</a>
+          <button id="btn_app" class="btn-link btn-app-link" onclick="openAppLink()">🔗 앱 실행하기</button>
+          <button id="btn_code" class="btn-link btn-code-link" onclick="openCodeLink()">📄 코드 보기</button>
         </div>
       </div>
       <div>
@@ -370,6 +370,9 @@
     let currentIdx    = 1;
     let selectedScore = null;
     let aiResult      = { codeStatus: '', codeAnalysis: '', sheet2Content: '', relevanceAnalysis: '' };
+    let appUrl        = '';
+    let codeUrl       = '';
+    let pendingFullscreen = false;
 
     // ── 유틸 ──────────────────────────────────────────
 
@@ -378,9 +381,29 @@
         document.documentElement.requestFullscreen()
           .catch(e => alert('전체화면 실행 불가: ' + e.message));
       } else {
+        pendingFullscreen = false;
         document.exitFullscreen();
       }
     }
+
+    function openAppLink() {
+      if (!appUrl) return;
+      if (document.fullscreenElement) pendingFullscreen = true;
+      window.open(appUrl, 'app_preview', 'width=1280,height=860,resizable=yes,scrollbars=yes');
+    }
+
+    function openCodeLink() {
+      if (!codeUrl) return;
+      if (document.fullscreenElement) pendingFullscreen = true;
+      window.open(codeUrl, 'code_preview', 'width=1280,height=860,resizable=yes,scrollbars=yes');
+    }
+
+    window.addEventListener('focus', function() {
+      if (pendingFullscreen && document.fullscreenEnabled && !document.fullscreenElement) {
+        pendingFullscreen = false;
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    });
 
     function adjustFont(delta) {
       const root = document.documentElement;
@@ -433,22 +456,10 @@
             data.score ? 'inline-block' : 'none';
 
           // 링크 버튼
-          const linkApp  = document.getElementById('link_app');
-          const linkCode = document.getElementById('link_code');
-          if (data.appLink) {
-            linkApp.href = data.appLink;
-            linkApp.classList.remove('disabled');
-          } else {
-            linkApp.href = '#';
-            linkApp.classList.add('disabled');
-          }
-          if (data.codeLink) {
-            linkCode.href = data.codeLink;
-            linkCode.classList.remove('disabled');
-          } else {
-            linkCode.href = '#';
-            linkCode.classList.add('disabled');
-          }
+          appUrl  = data.appLink  || '';
+          codeUrl = data.codeLink || '';
+          document.getElementById('btn_app').classList.toggle('disabled', !appUrl);
+          document.getElementById('btn_code').classList.toggle('disabled', !codeUrl);
 
           // 학생 답변
           document.getElementById('disp_problem').innerText  = data.problem;
