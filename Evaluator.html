@@ -251,9 +251,22 @@
       white-space: pre-wrap; word-break: keep-all;
     }
     .setech-text.placeholder { color: #aaa; font-style: italic; }
+
+    /* ── 전체화면 복원 배너 ── */
+    #fs_restore_banner {
+      display: none; position: fixed; top: 0; left: 0; right: 0;
+      background: #e67e22; color: white;
+      justify-content: center; align-items: center; gap: 10px;
+      padding: 10px 20px; font-size: 14px; font-weight: bold;
+      z-index: 9999; cursor: pointer;
+    }
   </style>
 </head>
 <body>
+
+  <div id="fs_restore_banner">
+    📺 앱 확인 후 이 창 아무 곳이나 클릭하면 전체화면으로 복원됩니다
+  </div>
 
   <!-- 헤더 -->
   <header class="header">
@@ -398,9 +411,18 @@
       window.open(codeUrl, 'code_preview', 'width=1280,height=860,resizable=yes,scrollbars=yes');
     }
 
-    window.addEventListener('focus', function() {
-      if (pendingFullscreen && document.fullscreenEnabled && !document.fullscreenElement) {
+    // fullscreenchange: 팝업으로 인해 전체화면이 해제됐을 때 배너 표시
+    document.addEventListener('fullscreenchange', function() {
+      if (!document.fullscreenElement && pendingFullscreen) {
+        document.getElementById('fs_restore_banner').style.display = 'flex';
+      }
+    });
+
+    // 이 창 클릭 시 전체화면 복원 (click은 사용자 제스처로 인정돼 requestFullscreen 허용)
+    document.addEventListener('click', function() {
+      if (pendingFullscreen && !document.fullscreenElement) {
         pendingFullscreen = false;
+        document.getElementById('fs_restore_banner').style.display = 'none';
         document.documentElement.requestFullscreen().catch(() => {});
       }
     });
