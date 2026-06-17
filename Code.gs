@@ -168,51 +168,34 @@ function analyzeCode(rowIndex) {
     var combinedPrompt =
       '다음은 고등학생이 "사회문제 해결 웹앱"으로 제출한 코드입니다.\n' +
       '코드 텍스트만으로 분석하며, 실제 실행 결과는 확인할 수 없음을 전제로 합니다.\n\n' +
-      '아래 형식을 반드시 지켜 출력하세요. 각 태그를 그대로 포함하세요.\n\n' +
-      '[코드상태]\n' +
-      '다음 세 가지 중 하나만 작성:\n' +
-      '- 정상코드: 문법 오류 없고 실행 가능한 수준\n' +
-      '- 오류코드: 명백한 문법 오류·미완성 코드 존재\n' +
-      '- 기능미흡: 실행은 되나 단순 텍스트 표시·메모장 수준으로 사회문제 해결과 무관한 기능만 존재\n\n' +
-      '[난이도]\n' +
-      '다음 세 가지 중 하나만 작성:\n' +
-      '- 기초: 단순 UI 표시, 로직·계산 없음, 사용자 입력만 저장하는 수준\n' +
-      '- 중급: 입력·저장·조회 로직, 조건 분기, 간단한 계산 포함\n' +
-      '- 고급: 외부 API 연동, 데이터 연산·알고리즘, 다중 기능 연동\n\n' +
-      '[구현기능]\n' +
-      '코드에서 실제로 확인된 기능을 빠짐없이 나열 (추정 금지, 개수 제한 없음)\n\n' +
-      '[미구현의심]\n' +
-      '학생이 제출 설명에 기재했으나 코드에서 확인되지 않거나 placeholder 수준인 기능을 빠짐없이 나열.\n' +
-      '없으면 "없음"이라고만 작성.\n\n' +
-      '[채점주의]\n' +
-      '교사가 앱을 직접 실행하여 확인해야 할 핵심 포인트\n\n' +
+      '출력 형식:\n' +
+      '첫 번째 줄: 코드상태와 난이도를 쉼표로 구분하여 작성\n' +
+      '  - 코드상태: 정상코드 / 오류코드 / 기능미흡(실행되나 메모장 수준) 중 하나\n' +
+      '  - 난이도: 기초(단순 UI·저장만) / 중급(조건 분기·계산 포함) / 고급(API 연동·알고리즘) 중 하나\n' +
+      '  예시) 오류코드, 중급\n\n' +
+      '두 번째 줄부터: 아래 순서로 한국어 서술식으로 작성\n' +
+      '1. [구현된 기능] 코드에서 실제로 확인된 기능을 빠짐없이 서술 (추정 금지)\n' +
+      '2. [미구현/의심 기능] 학생이 설명했으나 코드에 없거나 placeholder 수준인 기능 서술. 없으면 "없음".\n' +
+      '3. [채점 주의사항] 교사가 앱을 직접 실행하여 확인해야 할 사항 서술\n\n' +
       '[학생이 주목한 문제점 및 대책]\n' + problem + '\n\n' +
       '[학생이 제시한 핵심 기능]\n' + features + '\n\n' +
       '[제출된 코드]\n' + codeText;
 
     var combinedRaw = callOpenRouter(combinedPrompt, null, 1500);
 
-    function extractSection(raw, tag) {
-      var re = new RegExp('\\[' + tag + '\\]\\s*([\\s\\S]*?)(?=\\n\\[|$)');
-      var m  = raw.match(re);
-      return m ? m[1].trim() : '';
-    }
+    var lines      = combinedRaw.split('\n');
+    var firstLine  = lines[0].trim();
 
-    var codeStatusRaw = extractSection(combinedRaw, '코드상태');
-    var difficulty    = extractSection(combinedRaw, '난이도');
-    var implemented   = extractSection(combinedRaw, '구현기능');
-    var notImpl       = extractSection(combinedRaw, '미구현의심');
-    var caution       = extractSection(combinedRaw, '채점주의');
-
-    var codeStatus = codeStatusRaw.includes('정상') ? '정상코드'
-                   : codeStatusRaw.includes('미흡') ? '기능미흡'
+    var codeStatus = firstLine.includes('정상') ? '정상코드'
+                   : firstLine.includes('미흡') ? '기능미흡'
                    : '오류코드';
 
-    var codeAnalysis =
-      '【난이도】' + difficulty + '\n' +
-      '【구현기능】' + implemented + '\n' +
-      '【미구현의심】' + notImpl + '\n' +
-      '【채점주의】' + caution;
+    var difficulty = firstLine.includes('고급') ? '고급'
+                   : firstLine.includes('기초') ? '기초'
+                   : firstLine.includes('중급') ? '중급'
+                   : '';
+
+    var codeAnalysis = lines.slice(1).join('\n').trim();
 
     // 3차 수행평가 연관성 분석
     var studentId     = row[2];
@@ -241,9 +224,6 @@ function analyzeCode(rowIndex) {
     return {
       codeStatus:        codeStatus,
       difficulty:        difficulty,
-      implemented:       implemented,
-      notImpl:           notImpl,
-      caution:           caution,
       codeAnalysis:      codeAnalysis,
       sheet2Content:     sheet2Content,
       relevanceAnalysis: relevanceAnalysis
@@ -251,7 +231,7 @@ function analyzeCode(rowIndex) {
 
   } catch (e) {
     return {
-      codeStatus: '오류코드', difficulty: '', implemented: '', notImpl: '', caution: '',
+      codeStatus: '오류코드', difficulty: '',
       codeAnalysis: '분석 중 오류: ' + e.message, sheet2Content: '', relevanceAnalysis: ''
     };
   }
