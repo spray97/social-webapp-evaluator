@@ -169,36 +169,17 @@ function analyzeCode(rowIndex) {
     }
 
     var combinedPrompt =
-      '※ 모든 출력을 반드시 한국어로만 작성하세요. 영어 절대 금지.\n\n' +
-      '다음은 고등학생이 "사회문제 해결 웹앱"으로 제출한 코드입니다.\n' +
-      '코드 텍스트만으로 분석하며, 실제 실행 결과는 확인할 수 없음을 전제로 합니다.\n\n' +
-      '출력 형식:\n' +
-      '첫 번째 줄: 코드상태와 난이도를 쉼표로 구분하여 작성\n' +
-      '  - 코드상태: 정상코드 / 오류코드 / 기능미흡(실행되나 메모장 수준) 중 하나\n' +
-      '  - 난이도: 기초(단순 UI·저장만) / 중급(조건 분기·계산 포함) / 고급(API 연동·알고리즘) 중 하나\n' +
-      '  예시) 오류코드, 중급\n\n' +
-      '두 번째 줄부터: 아래 순서로 한국어 서술식으로 작성\n' +
-      '1. [구현된 기능] 코드에서 실제로 확인된 기능을 빠짐없이 서술 (추정 금지)\n' +
-      '2. [미구현/의심 기능] 학생이 설명했으나 코드에 없거나 placeholder 수준인 기능 서술. 없으면 "없음".\n' +
-      '3. [채점 주의사항] 교사가 앱을 직접 실행하여 확인해야 할 사항 서술\n\n' +
+      '다음 학생이 제출한 코드를 분석하세요.\n\n' +
+      '응답 형식을 반드시 지켜주세요:\n' +
+      '첫 번째 줄: "정상코드" 또는 "오류코드" 중 하나만 작성\n' +
+      '두 번째 줄부터: 코드가 학생의 문제 분석·핵심 기능과 얼마나 일치하는지 한국어로 작성\n\n' +
       '[학생이 주목한 문제점 및 대책]\n' + problem + '\n\n' +
       '[학생이 제시한 핵심 기능]\n' + features + '\n\n' +
       '[제출된 코드]\n' + codeText;
 
-    var combinedRaw = callOpenRouter(combinedPrompt, null, 1500);
-
-    var lines      = combinedRaw.split('\n');
-    var firstLine  = lines[0].trim();
-
-    var codeStatus = firstLine.includes('정상') ? '정상코드'
-                   : firstLine.includes('미흡') ? '기능미흡'
-                   : '오류코드';
-
-    var difficulty = firstLine.includes('고급') ? '고급'
-                   : firstLine.includes('기초') ? '기초'
-                   : firstLine.includes('중급') ? '중급'
-                   : '';
-
+    var combinedRaw  = callOpenRouter(combinedPrompt, null, 1000);
+    var lines        = combinedRaw.split('\n');
+    var codeStatus   = lines[0].includes('정상') ? '정상코드' : '오류코드';
     var codeAnalysis = lines.slice(1).join('\n').trim();
 
     // 3차 수행평가 연관성 분석
@@ -214,30 +195,26 @@ function analyzeCode(rowIndex) {
         '다음은 한 학생의 3차 수행평가(사회문제 분석)와 4차 수행평가(웹앱 개발) 결과입니다.\n' +
         '4차 웹앱이 3차에서 제시한 사회문제/사회현상을 해결(완화)하려는 방향과 연관성이 있는지 분석하세요.\n' +
         '반드시 첫 번째 줄에 [높음], [보통], [낮음] 중 정확히 하나만 작성하고, ' +
-        '두 번째 줄부터 이유를 200자 이내 한국어로 작성하세요.\n\n' +
+        '두 번째 줄부터 이유를 한국어로 작성하세요.\n\n' +
         '[3차 수행평가: 사회문제/사회현상 및 기대효과]\n' + sheet2Content + '\n\n' +
         '[4차 수행평가: 개발한 웹앱]\n' +
         '앱 이름: ' + appName + '\n' +
         '문제점 원인 및 대책: ' + problem + '\n' +
         '핵심 기능: ' + features;
-      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 1000);
+      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 800);
     } else {
       relevanceAnalysis = '시트2에서 학번(' + studentId + ')에 해당하는 3차 수행평가 자료를 찾을 수 없습니다.';
     }
 
     return {
       codeStatus:        codeStatus,
-      difficulty:        difficulty,
       codeAnalysis:      codeAnalysis,
       sheet2Content:     sheet2Content,
       relevanceAnalysis: relevanceAnalysis
     };
 
   } catch (e) {
-    return {
-      codeStatus: '오류코드', difficulty: '',
-      codeAnalysis: '분석 중 오류: ' + e.message, sheet2Content: '', relevanceAnalysis: ''
-    };
+    return { codeStatus: '오류코드', codeAnalysis: '분석 중 오류: ' + e.message, sheet2Content: '', relevanceAnalysis: '' };
   }
 }
 

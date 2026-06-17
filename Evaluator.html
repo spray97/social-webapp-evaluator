@@ -254,14 +254,6 @@
     }
     .setech-text.placeholder { color: #aaa; font-style: italic; }
 
-    /* ── AI 분석 재설계 ── */
-    .difficulty-badge {
-      padding: 4px 12px; border-radius: 20px;
-      font-size: 12px; font-weight: bold; white-space: nowrap; flex-shrink: 0;
-    }
-    .difficulty-badge.basic    { background: #fff3cd; color: #856404; }
-    .difficulty-badge.mid      { background: #cce5ff; color: #004085; }
-    .difficulty-badge.advanced { background: #d4edda; color: #155724; }
     /* ── 전체화면 복원 배너 ── */
     #fs_restore_banner {
       display: none; position: fixed; top: 0; left: 0; right: 0;
@@ -343,8 +335,7 @@
       <button class="btn-analyze" id="btn_analyze" onclick="runAnalysis()">🤖 AI 분석 실행</button>
       <span class="ai-label">코드 검토</span>
       <span class="ai-badge" id="ai_badge"></span>
-      <span class="difficulty-badge" id="diff_badge" style="display:none"></span>
-      <span class="ai-analysis-text" id="ai_text">분석 버튼을 클릭하면 코드 유효성·난이도·미구현 의심 기능을 분석합니다.</span>
+      <span class="ai-analysis-text" id="ai_text">분석 버튼을 클릭하면 코드 유효성 및 기능 일치 여부를 자동 분석합니다.</span>
     </div>
     <!-- 2행: 3차 연관성 -->
     <div class="ai-row" id="relevance_row" style="display:none">
@@ -457,10 +448,8 @@
       document.getElementById('btn_save').innerText    = '데이터 불러오는 중...';
       document.getElementById('btn_analyze').disabled  = true;
       document.getElementById('btn_analyze').innerText = '⏳ 로딩 중...';
-      document.getElementById('ai_badge').className       = 'ai-badge';
-      document.getElementById('diff_badge').style.display = 'none';
-      document.getElementById('ai_text').innerText =
-        '분석 버튼을 클릭하면 코드 유효성·난이도·미구현 의심 기능을 분석합니다.';
+      document.getElementById('ai_badge').className = 'ai-badge';
+      document.getElementById('ai_text').innerText  = '분석 버튼을 클릭하면 코드 유효성 및 기능 일치 여부를 자동 분석합니다.';
       document.getElementById('relevance_row').style.display = 'none';
       document.getElementById('btn_setech').disabled   = true;
       document.getElementById('btn_setech').innerText  = '⏳ 로딩 중...';
@@ -503,7 +492,7 @@
 
           // 기존 AI 분석 결과 복원
           if (data.codeStatus) {
-            showAiResult(data.codeStatus, data.codeAnalysis, '');
+            showAiResult(data.codeStatus, data.codeAnalysis);
             aiResult = {
               codeStatus:        data.codeStatus,
               codeAnalysis:      data.codeAnalysis,
@@ -557,7 +546,7 @@
       google.script.run
         .withSuccessHandler(function(result) {
           aiResult = result;
-          showAiResult(result.codeStatus, result.codeAnalysis, result.difficulty || '');
+          showAiResult(result.codeStatus, result.codeAnalysis);
           showRelevance(result.sheet2Content, result.relevanceAnalysis);
           btn.disabled  = false;
           btn.innerText = '🔄 재분석';
@@ -570,25 +559,10 @@
         .analyzeCode(currentIdx);
     }
 
-    function showAiResult(status, analysis, difficulty) {
-      // 코드상태 배지
+    function showAiResult(status, analysis) {
       const badge = document.getElementById('ai_badge');
       badge.innerText = status || '';
       badge.className = 'ai-badge ' + (status === '정상코드' ? 'normal' : 'error');
-
-      // 난이도 배지
-      const diffBadge = document.getElementById('diff_badge');
-      if (difficulty) {
-        const cls = difficulty.includes('기초') ? 'basic'
-                  : difficulty.includes('고급') ? 'advanced' : 'mid';
-        diffBadge.innerText = '난이도: ' + difficulty;
-        diffBadge.className = 'difficulty-badge ' + cls;
-        diffBadge.style.display = 'inline-block';
-      } else {
-        diffBadge.style.display = 'none';
-      }
-
-      // 전체 분석 텍스트 (pre-wrap으로 줄바꿈 표시)
       document.getElementById('ai_text').innerText = analysis || '';
     }
 
