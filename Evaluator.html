@@ -165,6 +165,8 @@
     .ai-analysis-text {
       font-size: 13px; color: #444;
       line-height: 1.6; flex: 1;
+      white-space: pre-wrap;
+      max-height: 90px; overflow-y: auto;
     }
     .relevance-text {
       font-size: 13px; color: #333;
@@ -260,8 +262,6 @@
     .difficulty-badge.basic    { background: #fff3cd; color: #856404; }
     .difficulty-badge.mid      { background: #cce5ff; color: #004085; }
     .difficulty-badge.advanced { background: #d4edda; color: #155724; }
-    .ai-analysis-text { white-space: pre-wrap; }
-
     /* ── 전체화면 복원 배너 ── */
     #fs_restore_banner {
       display: none; position: fixed; top: 0; left: 0; right: 0;
