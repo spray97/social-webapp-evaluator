@@ -19,15 +19,23 @@ function openEvaluator() {
   SpreadsheetApp.getUi().showModalDialog(html, ' ');
 }
 
+// ── 시트 헬퍼 ────────────────────────────────────────
+
+function getMainSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName('시트1') || ss.getSheets()[0];
+}
+
 // ── 데이터 읽기 ──────────────────────────────────────
 
 function getStudentData(rowIndex) {
   rowIndex = rowIndex || 1;
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var sheet = getMainSheet();
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
 
-  var targetRow = Math.max(1, Math.min(rowIndex, lastRow - 1));
+  if (rowIndex > lastRow - 1) return null;
+  var targetRow = Math.max(1, rowIndex);
   var row = sheet.getRange(targetRow + 1, 1, 1, 16).getValues()[0];
 
   return {
@@ -53,13 +61,11 @@ function getStudentData(rowIndex) {
 // ── 데이터 저장 ──────────────────────────────────────
 
 function saveResult(rowIndex, codeStatus, codeAnalysis, relevanceAnalysis, comment, score) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var sheet = getMainSheet();
   var actualRow = parseInt(rowIndex) + 1;
-  sheet.getRange(actualRow, 11).setValue(codeStatus        || '');  // K(11): 코드상태
-  sheet.getRange(actualRow, 12).setValue(codeAnalysis      || '');  // L(12): 코드분석
-  sheet.getRange(actualRow, 13).setValue(relevanceAnalysis || '');  // M(13): 연관성분석
-  sheet.getRange(actualRow, 14).setValue(comment           || '');  // N(14): 교사의견
-  sheet.getRange(actualRow, 15).setValue(score             || '');  // O(15): 점수
+  sheet.getRange(actualRow, 11, 1, 5).setValues([[
+    codeStatus || '', codeAnalysis || '', relevanceAnalysis || '', comment || '', score || ''
+  ]]);
   return true;
 }
 
@@ -89,9 +95,12 @@ function getSheet2Data(studentId) {
 //   "https://drive.google.com/open?id=ABC123, https://drive.google.com/open?id=DEF456"
 function parseDriveLinks(linkString) {
   if (!linkString) return [];
-  var matches = linkString.match(/id=([a-zA-Z0-9_-]+)/g);
-  if (!matches) return [];
-  return matches.map(function(m) { return m.replace('id=', ''); });
+  var ids = [];
+  var qsMatches   = linkString.match(/[?&]id=([a-zA-Z0-9_-]+)/g) || [];
+  var pathMatches = linkString.match(/\/(?:file\/d|folders)\/([a-zA-Z0-9_-]+)/g) || [];
+  qsMatches.forEach(function(m)   { ids.push(m.replace(/.*id=/, '')); });
+  pathMatches.forEach(function(m) { ids.push(m.replace(/.*\//, '')); });
+  return ids.filter(function(v, i, a) { return a.indexOf(v) === i; });
 }
 
 function readDriveFile(fileId) {
@@ -130,14 +139,19 @@ function callOpenRouter(prompt, model, maxTokens) {
     muteHttpExceptions: true
   });
 
+  var httpCode = response.getResponseCode();
+  if (httpCode !== 200) {
+    throw new Error('OpenRouter HTTP ' + httpCode + ': ' + response.getContentText().substring(0, 200));
+  }
   var parsed = JSON.parse(response.getContentText());
   if (parsed.error) throw new Error(parsed.error.message);
+  if (!parsed.choices || !parsed.choices[0]) throw new Error('응답 형식 오류: choices 없음');
   return parsed.choices[0].message.content.trim();
 }
 
 function analyzeCode(rowIndex) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var sheet = getMainSheet();
     var row   = sheet.getRange(parseInt(rowIndex) + 1, 1, 1, 14).getValues()[0];
 
     var codeLink = row[6] || '';
@@ -179,10 +193,19 @@ function analyzeCode(rowIndex) {
       '[학생이 제시한 핵심 기능]\n' + features + '\n\n' +
       '[제출된 코드]\n' + codeText;
 
-    var combinedRaw  = callOpenRouter(combinedPrompt, null, 1000);
-    var lines        = combinedRaw.split('\n');
-    var codeStatus   = lines[0].includes('정상') ? '정상코드' : '오류코드';
-    var codeAnalysis = lines.slice(1).join('\n').trim();
+    var combinedRaw = callOpenRouter(combinedPrompt, null, 1000);
+    var lines       = combinedRaw.split('\n');
+    var codeStatus  = '오류코드';
+    var analysisStartIndex = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var trimmed = lines[i].trim().replace(/^﻿/, '');
+      if (trimmed === '정상코드' || trimmed === '오류코드') {
+        codeStatus = trimmed;
+        analysisStartIndex = i + 1;
+        break;
+      }
+    }
+    var codeAnalysis = lines.slice(analysisStartIndex).join('\n').trim();
 
     // 3차 수행평가 연관성 분석
     var studentId     = row[2];
@@ -223,7 +246,7 @@ function analyzeCode(rowIndex) {
 // ── 검증용 (GAS 에디터에서 직접 실행) ─────────────────
 
 function getNextUnscored(fromRowIndex) {
-  var sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var sheet   = getMainSheet();
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
 
@@ -237,7 +260,7 @@ function getNextUnscored(fromRowIndex) {
 function generateSetech(rowIndex) {
   var SETECH_MODEL = 'anthropic/claude-sonnet-4-6';
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var sheet = getMainSheet();
     var row   = sheet.getRange(parseInt(rowIndex) + 1, 1, 1, 15).getValues()[0];
 
     var studentId = row[2] || '';
@@ -308,7 +331,7 @@ function generateSetech(rowIndex) {
       '출력 전 반드시 글자 수(공백 포함)를 세어 350~400자인지 확인하고, 초과하면 각 문장을 줄여 조정하세요. ' +
       '참고 샘플의 글자 수는 무시하고, 오직 350~400자 기준만 따르세요.';
 
-    var setech = callOpenRouter(setechPrompt, SETECH_MODEL);
+    var setech = callOpenRouter(setechPrompt, SETECH_MODEL, 1200);
 
     // P열(16번째)에 저장
     sheet.getRange(parseInt(rowIndex) + 1, 16).setValue(setech);

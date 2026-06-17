@@ -420,11 +420,11 @@
       }
     });
 
-    // 이 창 클릭 시 전체화면 복원 (click은 사용자 제스처로 인정돼 requestFullscreen 허용)
-    document.addEventListener('click', function() {
+    // 배너 클릭 시 전체화면 복원 (click은 사용자 제스처로 인정돼 requestFullscreen 허용)
+    document.getElementById('fs_restore_banner').addEventListener('click', function() {
       if (pendingFullscreen && !document.fullscreenElement) {
         pendingFullscreen = false;
-        document.getElementById('fs_restore_banner').style.display = 'none';
+        this.style.display = 'none';
         document.documentElement.requestFullscreen().catch(() => {});
       }
     });
@@ -569,18 +569,20 @@
     function showRelevance(sheet2Content, relevanceText) {
       if (!relevanceText) return;
 
-      // "1) 관심 사회문제:" 같은 헤더 줄 제거 후 실제 내용만 미리보기
+      // "1) 관심 사회문제:" 같은 헤더 줄 제거 후 실제 내용만 미리보기 (/gm으로 전체 헤더 제거)
       const cleanPreview = sheet2Content
-        ? sheet2Content.replace(/^\d+\)[^\n]*:\s*/m, '').trim()
+        ? sheet2Content.replace(/^\d+\)[^\n]*:\s*/gm, '').trim()
         : '';
+      // 기존 채점 복원 시 sheet2Content가 빈 값이면 "(재분석 시 표시)"로 안내
       document.getElementById('sheet2_preview').innerText = cleanPreview
         ? cleanPreview.substring(0, 80) + (cleanPreview.length > 80 ? '...' : '')
-        : '(3차 자료 없음)';
+        : '(재분석 시 표시)';
 
       // 전체 텍스트에서 등급 태그를 검색 (위치 무관)
       const badge = document.getElementById('relevance_badge');
-      let level = 'medium';
+      let level = null;
       if (relevanceText.includes('[높음]')) level = 'high';
+      else if (relevanceText.includes('[보통]')) level = 'medium';
       else if (relevanceText.includes('[낮음]')) level = 'low';
 
       // 등급 태그 제거 후 전체 텍스트 표시
@@ -588,8 +590,8 @@
       document.getElementById('relevance_text').innerText = cleanText;
 
       const labelMap = { high: '연관성 높음', medium: '연관성 보통', low: '연관성 낮음' };
-      badge.innerText = labelMap[level];
-      badge.className = 'relevance-badge ' + level;
+      badge.innerText = level ? labelMap[level] : '연관성 미확인';
+      badge.className = 'relevance-badge ' + (level || 'medium');
 
       document.getElementById('relevance_row').style.display = 'flex';
     }
@@ -607,9 +609,16 @@
 
     function save() {
       if (!selectedScore) { alert('점수를 먼저 선택해 주세요.'); return; }
-      document.getElementById('btn_save').innerText = '저장 중...';
+      const saveBtn = document.getElementById('btn_save');
+      saveBtn.disabled  = true;
+      saveBtn.innerText = '저장 중...';
       google.script.run
         .withSuccessHandler(() => load(currentIdx + 1))
+        .withFailureHandler(function(err) {
+          saveBtn.disabled  = false;
+          saveBtn.innerText = '💾 저장 후 다음 학생';
+          alert('저장 오류: ' + err.message);
+        })
         .saveResult(
           currentIdx,
           aiResult.codeStatus        || '',
