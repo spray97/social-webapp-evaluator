@@ -239,7 +239,7 @@ function analyzeCode(rowIndex) {
         '앱 이름: ' + appName + '\n' +
         '문제점 원인 및 대책: ' + problem + '\n' +
         '핵심 기능: ' + features;
-      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 1500);
+      relevanceAnalysis = callOpenRouter(relevancePrompt, null, 2500);
     } else {
       relevanceAnalysis = '시트2에서 학번(' + studentId + ')에 해당하는 3차 수행평가 자료를 찾을 수 없습니다.';
     }
